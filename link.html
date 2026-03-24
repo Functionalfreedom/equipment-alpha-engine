@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hierarchy Bank Link</title>
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <h1>Connect to Scotiabank (Sandbox)</h1>
+    <button id="link-button" style="padding: 15px 30px; font-size: 16px; cursor: pointer;">
+        Link Bank Account
+    </button>
+
+    <script>
+        const handler = Plaid.create({
+            token: 'link-sandbox-0e5ce5b5-7371-47b2-b2fc-cdaa41581a9b', 
+            onSuccess: (public_token, metadata) => {
+                console.log('--- COPY THIS PUBLIC TOKEN ---');
+                console.log(public_token);
+                alert('Success! Right-click the page > Inspect > Console to find your Public Token.');
+            },
+        });
+        document.getElementById('link-button').onclick = () => handler.open();
+    </script>
+</body>
+</html>
