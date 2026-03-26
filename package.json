@@ -17,6 +17,8 @@
     "express": "^5.2.1",
     "imap-simple": "^5.1.0",
     "mailparser": "^3.9.5",
+    "moment-timezone": "^0.6.1",
+    "node-cron": "^4.2.1",
     "node-imap": "^0.9.6",
     "nodemailer": "^8.0.3",
     "pg": "^8.20.0",

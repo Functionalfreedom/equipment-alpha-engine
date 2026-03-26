@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HIERARCHY INVESTMENT CAPITAL | Asset Portal</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; }
+        h1 { color: #38bdf8; letter-spacing: 2px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 5px;}
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }
+        th { background: #334155; padding: 15px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; }
+        td { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; }
+        tr:hover { background: #2d3748; }
+        .fee { font-weight: bold; color: #4ade80; }
+        .uid { font-family: 'Courier New', monospace; color: #64748b; font-size: 11px; }
+        .btn { background: #38bdf8; color: #0f172a; padding: 6px 10px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <h1>HIERARCHY INVESTMENT CAPITAL</h1>
+    <p>Asset Portal | High-Value Asset Brokerage | All Values USD (0.72 FX)</p>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 120px;">UID</th>
+                <th style="width: 60px;">Reg</th>
+                <th>Asset Details</th>
+                <th>Ends</th>
+                <th>Bid</th>
+                <th>FMV</th>
+                <th>HIC Success Fee</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="asset-table"></tbody>
+    </table>
+    <script>
+        async function loadAssets() {
+            try {
+                const res = await fetch('/api/assets');
+                const data = await res.json();
+                document.getElementById('asset-table').innerHTML = data.map(asset => `
+                    <tr>
+                        <td class="uid">${asset.uid || 'N/A'}</td>
+                        <td>${asset.province || 'SK'}</td>
+                        <td><strong>${asset.unit_name}</strong></td>
+                        <td>${asset.expiry_date}</td>
+                        <td>$${Math.round(asset.current_bid).toLocaleString()}</td>
+                        <td>$${Math.round(asset.market_value).toLocaleString()}</td>
+                        <td class="fee">$${Math.round(asset.hic_fee).toLocaleString()}</td>
+                        <td><a href="${asset.item_url}" target="_blank" class="btn">SOURCE</a></td>
+                    </tr>
+                `).join('');
+            } catch (err) { console.error("Update failed:", err); }
+        }
+        loadAssets();
+        setInterval(loadAssets, 60000);
+    </script>
+</body>
+</html>

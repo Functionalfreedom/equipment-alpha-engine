@@ -2,102 +2,79 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { Pool } = require('pg');
 const crypto = require('crypto');
+require('dotenv').config({ path: '/Users/belgienunez/my-first-api/.env' });
 
 puppeteer.use(StealthPlugin());
 const pool = new Pool({ user: 'belgienunez', host: 'localhost', database: 'postgres', port: 5432 });
+const FX_RATE = 0.72;
+
+function calculateDynamicFMV(title) {
+    const name = title.toLowerCase();
+    if (/Account|Privacy|Terms|Login|Policy|Sign Up/i.test(name)) return 0;
+    const currentYear = 2026;
+    const yearMatch = title.match(/\b(19|20)\d{2}\b/);
+    const assetYear = yearMatch ? parseInt(yearMatch[0]) : 2018; 
+    const age = currentYear - assetYear;
+    let baseValue = 25000;
+    if (name.includes('944k')) baseValue = 345000;
+    else if (name.includes('470g')) baseValue = 185000;
+    else if (name.includes('315')) baseValue = 125000;
+    else if (name.includes('excavator') && !name.includes('mini')) baseValue = 85000;
+    else if (name.includes('wheel loader')) baseValue = 85000;
+    else if (name.includes('skid steer')) baseValue = 42000;
+    else if (name.includes('mini excavator')) baseValue = 22000;
+    else if (name.includes('shipping container')) return name.includes('40') ? 5500 : 3500;
+    let adjustedFMV = baseValue * Math.pow(0.94, age); 
+    if (name.includes('cat') || name.includes('caterpillar')) adjustedFMV *= 1.15;
+    if (name.includes('john deere')) adjustedFMV *= 1.10;
+    if (name.includes('hitachi') && age > 15) adjustedFMV *= 0.80;
+    return Math.round(adjustedFMV);
+}
 
 async function runTrawler() {
-    // SWITCHED TO HEADLESS: "NEW" FOR SILENT BACKGROUND SYNC
-    const browser = await puppeteer.launch({ 
-        headless: "new", 
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'] 
-    });
+    const browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox'] });
     const page = await browser.newPage();
-    
     try {
-        console.log(`[HIC] ${new Date().toLocaleTimeString()} - Engaging Silent Deep-Sync...`);
-        await page.goto('https://mcdougallauction.com/products.php?category=Construction+Equipment', { 
-            waitUntil: 'networkidle2', 
-            timeout: 60000 
-        });
-        
-        // Wait for the React hydration of bid data
-        await page.waitForFunction(() => document.body.innerText.includes('Bid'), { timeout: 20000 });
-
-        // SMART CHUNK-SCROLL: Slower cadence to catch all 88+ units
-        await page.evaluate(async () => {
-            await new Promise((resolve) => {
-                let totalHeight = 0;
-                let distance = 400; 
-                let timer = setInterval(() => {
-                    let scrollHeight = document.body.scrollHeight;
-                    window.scrollBy(0, distance);
-                    totalHeight += distance;
-                    if (totalHeight >= scrollHeight) {
-                        clearInterval(timer);
-                        resolve();
-                    }
-                }, 800); // 800ms pause ensures 2026 server-side hydration
-            });
-        });
-
+        await page.goto('https://mcdougallauction.com/products.php?category=Construction+Equipment', { waitUntil: 'networkidle2' });
+        for(let i=0; i<15; i++) { await page.evaluate(() => window.scrollBy(0, 2000)); await new Promise(r => setTimeout(r, 800)); }
         const assets = await page.evaluate(() => {
             const results = [];
-            const blocks = Array.from(document.querySelectorAll('div, section, article'))
-                .filter(el => el.innerText.includes('Lot:') && el.innerText.includes('$'));
-
-            blocks.forEach(el => {
-                const text = el.innerText;
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
-                const title = lines[0];
-                const bidMatch = text.match(/(?:Bid|Current|Opening).*?\$?([\d,]+(?:\.\d{2})?)/i);
+            const links = Array.from(document.querySelectorAll('a[href*="arg="], a[href*="products-full-view"]'));
+            links.forEach(link => {
+                let container = link.parentElement;
+                for (let i = 0; i < 12; i++) {
+                    if (container && (container.innerText.includes('Lot:') || container.innerText.includes('Closes:'))) break;
+                    container = container ? container.parentElement : null;
+                }
+                const text = container ? container.innerText : "";
+                let bidValue = "0";
+                const explicitBid = text.match(/Current Bid\s*:\s*\$([\d,]+)/i);
+                if (explicitBid) bidValue = explicitBid[1].replace(/,/g, '');
+                const lotMatch = text.match(/Lot\s*#?\s*(\d+)/i);
+                const lotNumber = lotMatch ? lotMatch[1] : Math.random().toString(36).substring(7);
+                const locMatch = text.match(/\b(SK|AB|MB|ON|BC)\b/);
                 const expiryMatch = text.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s[A-Z][a-z]{2}\.?\s\d{1,2}/);
-                const link = el.querySelector('a')?.href;
-
-                // FILTER: Ignore navigation noise and breadcrumbs
-                if (title && !title.includes('/') && !title.includes('CATEGORIES') && bidMatch && link) {
-                    results.push({
-                        title: title,
-                        bid: parseFloat(bidMatch[1].replace(/,/g, '')),
-                        url: link,
-                        expiry: expiryMatch ? expiryMatch[0] : "Check Site"
-                    });
+                if (bidValue !== "0" && link.innerText.trim().length > 10) {
+                    results.push({ title: link.innerText.trim(), url: link.href, bid: bidValue, lot: lotNumber, province: locMatch ? locMatch[0].toUpperCase() : "SK", expiry: expiryMatch ? expiryMatch[0] : "Check Site" });
                 }
             });
             return results;
         });
-
-        // Deduplicate URL hashes
-        const unique = Array.from(new Map(assets.map(a => [a.url, a])).values());
-        console.log(`[SCAN] ${unique.length} Units Found. Syncing to Hierarchy DB...`);
-
-        for (let a of unique) {
-            // Valuation Logic (HIC Conservative Estimates)
-            let fmv = 25000;
-            const lowerTitle = a.title.toLowerCase();
-            if (lowerTitle.includes('excavator')) fmv = 135000;
-            if (lowerTitle.includes('mini')) fmv = 18500;
-            if (lowerTitle.includes('loader')) fmv = 165000;
-            if (lowerTitle.includes('container')) fmv = 6500;
-
-            const spread = fmv - a.bid;
-            
-            // Generate Traceable UID
-            const uid = 'HIC-' + crypto.createHash('md5').update(a.url).digest('hex').substring(0, 10).toUpperCase();
-
+        await pool.query("TRUNCATE live_purview CASCADE;");
+        for (let a of assets) {
+            const uid = 'HIC-' + crypto.createHash('md5').update(a.url + a.lot).digest('hex').substring(0, 8).toUpperCase();
+            const bid_usd = parseFloat(a.bid) * FX_RATE;
+            const fmv = calculateDynamicFMV(a.title);
+            if (fmv === 0) continue;
+            const spread = fmv - bid_usd;
+            let fee = Math.round(spread * 0.08);
+            if (fee < 500) continue; 
             await pool.query(`
-                INSERT INTO live_purview (uid, unit_name, current_bid, market_value, spread_value, item_url, location_tag, usd_landed, expiry_date, hic_fee)
-                VALUES ($1, $2, $3, $4, $5, $6, 'SK_ON', $7, $8, $9)
-                ON CONFLICT (uid) DO UPDATE SET 
-                    current_bid = EXCLUDED.current_bid, 
-                    expiry_date = EXCLUDED.expiry_date,
-                    spread_value = EXCLUDED.market_value - EXCLUDED.current_bid`,
-                [uid, a.title, Math.floor(a.bid), fmv, spread, a.url, Math.round(fmv * 0.72), a.expiry, Math.round(fmv * 0.10)]
-            );
+                INSERT INTO live_purview (uid, unit_name, current_bid, market_value, spread_value, hic_fee, item_url, province, expiry_date, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+            `, [uid, a.title, bid_usd, fmv, spread, fee, a.url, a.province, a.expiry]);
         }
-        console.log(`[SUCCESS] Deep-Sync Complete. Next scan scheduled for 06:00 EST.`);
-    } catch (e) { console.log(`[ERR] ${e.message}`); }
-    finally { await browser.close(); process.exit(); }
+        console.log(`[SUCCESS] Purview Synced.`);
+    } finally { await pool.end(); await browser.close(); process.exit(); }
 }
-
 runTrawler();
