@@ -1,32 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HIERARCHY INVESTMENT CAPITAL | Asset Portal</title>
+    <title>HIERARCHY | Sovereign Asset Portal</title>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; }
-        h1 { color: #38bdf8; letter-spacing: 2px; border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 5px;}
-        p { color: #94a3b8; font-size: 14px; margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }
-        th { background: #334155; padding: 15px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; }
-        td { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; }
-        tr:hover { background: #2d3748; }
-        .fee { font-weight: bold; color: #4ade80; }
-        .uid { font-family: 'Courier New', monospace; color: #64748b; font-size: 11px; }
-        .btn { background: #38bdf8; color: #0f172a; padding: 6px 10px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        body { font-family: 'Inter', sans-serif; background: #0b1120; color: #f8fafc; padding: 40px; }
+        .header { border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .tag { font-size: 10px; background: #38bdf8; color: #0b0f1a; padding: 2px 6px; border-radius: 4px; margin-right: 8px; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; background: #161e2e; border-radius: 12px; overflow: hidden; }
+        th { text-align: left; padding: 20px; color: #94a3b8; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #1e293b; letter-spacing: 1px; }
+        td { padding: 20px; border-bottom: 1px solid #1e293b; font-size: 14px; }
+        tr:hover { background: #1f2937; }
+        .fee-pill { background: #064e3b; color: #34d399; padding: 4px 12px; border-radius: 99px; font-weight: bold; font-size: 12px; }
+        .stale { color: #f59e0b; font-weight: bold; }
+        .sync-info { font-size: 12px; color: #64748b; }
     </style>
 </head>
 <body>
-    <h1>HIERARCHY INVESTMENT CAPITAL</h1>
-    <p>Asset Portal | High-Value Asset Brokerage | All Values USD (0.72 FX)</p>
+    <div class="header">
+        <div>
+            <h1 style="margin:0; letter-spacing: 3px;">HIERARCHY <span style="font-weight:100; color:#64748b;">CAPITAL</span></h1>
+            <div class="sync-info">Asset Portal | All Values USD (0.72 FX)</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 11px; color: #4ade80; font-weight: bold;">SYSTEM STATUS: LIVE</div>
+            <div class="sync-info">LAST SYNC: <span id="sync-time">---</span></div>
+        </div>
+    </div>
     <table>
         <thead>
             <tr>
-                <th style="width: 120px;">UID</th>
-                <th style="width: 60px;">Reg</th>
+                <th>UID</th>
+                <th>Reg</th>
                 <th>Asset Details</th>
-                <th>Ends</th>
-                <th>Bid</th>
-                <th>FMV</th>
+                <th>Time on Market</th>
+                <th>Bid/Price</th>
+                <th>FMV Spread</th>
                 <th>HIC Success Fee</th>
                 <th>Action</th>
             </tr>
@@ -34,26 +42,28 @@
         <tbody id="asset-table"></tbody>
     </table>
     <script>
-        async function loadAssets() {
+        async function load() {
             try {
                 const res = await fetch('/api/assets');
                 const data = await res.json();
-                document.getElementById('asset-table').innerHTML = data.map(asset => `
+                if(data.lastSync) document.getElementById('sync-time').innerText = new Date(data.lastSync).toLocaleTimeString();
+                
+                document.getElementById('asset-table').innerHTML = data.assets.map(a => `
                     <tr>
-                        <td class="uid">${asset.uid || 'N/A'}</td>
-                        <td>${asset.province || 'SK'}</td>
-                        <td><strong>${asset.unit_name}</strong></td>
-                        <td>${asset.expiry_date}</td>
-                        <td>$${Math.round(asset.current_bid).toLocaleString()}</td>
-                        <td>$${Math.round(asset.market_value).toLocaleString()}</td>
-                        <td class="fee">$${Math.round(asset.hic_fee).toLocaleString()}</td>
-                        <td><a href="${asset.item_url}" target="_blank" class="btn">SOURCE</a></td>
+                        <td style="font-family:monospace; color:#64748b; font-size:11px;">${a.uid}</td>
+                        <td>${a.province}</td>
+                        <td><span class="tag">${a.category || 'Heavy'}</span><strong>${a.unit_name}</strong></td>
+                        <td class="${a.updated_at?.includes('day') ? 'stale' : ''}">${a.updated_at || 'New'}</td>
+                        <td>$${Math.round(a.current_bid).toLocaleString()}</td>
+                        <td style="color:#38bdf8; font-weight:bold;">$${Math.round(a.market_value - a.current_bid).toLocaleString()}</td>
+                        <td><span class="fee-pill">$${Math.round(a.hic_fee).toLocaleString()}</span></td>
+                        <td><a href="${a.item_url}" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:bold;">DATA SOURCE</a></td>
                     </tr>
                 `).join('');
-            } catch (err) { console.error("Update failed:", err); }
+            } catch (e) { console.error(e); }
         }
-        loadAssets();
-        setInterval(loadAssets, 60000);
+        load();
+        setInterval(load, 30000);
     </script>
 </body>
 </html>
