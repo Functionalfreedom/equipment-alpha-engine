@@ -1,17 +1,30 @@
 const express = require('express');
 const { Pool } = require('pg');
+const path = require('path');
 const app = express();
-const pool = new Pool({ user: 'belgienunez', host: 'localhost', database: 'postgres', port: 5432 });
 
-app.use(express.static(__dirname));
+const pool = new Pool({ 
+    database: 'postgres',
+    host: 'localhost',
+    port: 5432
+});
+
+app.use(express.static(path.join(__dirname)));
+
 app.get('/api/assets', async (req, res) => {
     try {
-        const result = await pool.query('SELECT uid, province, unit_name, current_bid, market_value, hic_fee, item_url, category, updated_at FROM live_purview ORDER BY hic_fee DESC');
-        const latestUpdate = await pool.query('SELECT MAX(updated_at) as last_sync FROM live_purview');
-        res.json({
-            assets: result.rows,
-            lastSync: latestUpdate.rows[0].last_sync || new Date()
-        });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        // Force the query to pull EVERYTHING from the table
+        const result = await pool.query("SELECT *, expiry_date AS time_on_market FROM live_purview ORDER BY hic_fee DESC");
+        const lastSync = result.rows.length > 0 ? result.rows[0].updated_at : new Date();
+        res.json({ assets: result.rows, lastSync });
+    } catch (err) {
+        console.error('DB Error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
-app.listen(3000, () => console.log('HIC Dashboard Live: http://localhost:3000'));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(3000, () => console.log('Hierarchy Sovereign Dashboard Online'));

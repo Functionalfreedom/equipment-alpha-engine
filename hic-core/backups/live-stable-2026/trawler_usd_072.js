@@ -50,13 +50,13 @@ async function runTrawler() {
             const fee_usd = (fmv_usd - bid_usd) * 0.08;
 
             await pool.query(`
-                INSERT INTO live_purview (uid, unit_name, current_bid, market_value, spread_value, hic_fee, item_url, expiry_date, updated_at)
+                INSERT INTO live_purview (uid, unit_name, current_bid, market_value, spread_value, hic_fee, item_url, expiry_date, category, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
                 ON CONFLICT (uid) DO UPDATE SET 
                     current_bid = EXCLUDED.current_bid, 
                     hic_fee = EXCLUDED.hic_fee, 
                     updated_at = NOW()
-            `, [uid, a.title, bid_usd, fmv_usd, (fmv_usd - bid_usd), Math.round(fee_usd), a.url, a.expiry]);
+            `, [uid, a.title, bid_usd, fmv_usd, (fmv_usd - bid_usd), Math.round(fee_usd), a.url,  'Heavy', a.expiry]);
         }
         console.log(`[SUCCESS] ${assets.length} Units Synced at 0.72 FX.`);
     } catch (e) { console.log("[ERR] " + e.message); }
