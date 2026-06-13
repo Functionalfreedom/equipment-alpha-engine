@@ -15,13 +15,13 @@ const pool = new Pool({
 // 2. Email Configuration (Use App Passwords for Gmail)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: 'hierarchyinvestmentcorp@gmail.com', pass: 'your-app-password' }
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
 const config = {
     imap: {
-        user: 'hierarchyinvestmentcorp@gmail.com',
-        password: 'your-app-password',
+        user: process.env.EMAIL_USER,
+        password: process.env.EMAIL_PASS,
         host: 'imap.gmail.com',
         port: 993,
         tls: true,
@@ -76,7 +76,7 @@ async function listenForAction() {
                 const pdfPath = await generateLSA(deal);
                 
                 await transporter.sendMail({
-                    from: 'hierarchyinvestmentcorp@gmail.com',
+                    from: process.env.EMAIL_USER,
                     to: 'belgie.nunez@gmail.com',
                     subject: `STAGED: LSA for ${deal.uid}`,
                     text: `Review the attached Lead Sales Agreement for ${deal.unit_name}. Reply DEPOSIT to release source URL.`,

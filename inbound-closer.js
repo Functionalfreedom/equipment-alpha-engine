@@ -9,12 +9,12 @@ const { generateProfessionalPDF } = require('./scraper.js');
 const pool = new Pool({ user: 'belgienunez', host: 'localhost', database: 'postgres', port: 5432 });
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com', port: 465, secure: true,
-    auth: { user: 'hierarchyinvestmentcorp@gmail.com', pass: 'klljylapojryecxv' }
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
 const config = {
     imap: {
-        user: 'hierarchyinvestmentcorp@gmail.com', password: 'klljylapojryecxv',
+        user: process.env.EMAIL_USER, password: process.env.EMAIL_PASS,
         host: 'imap.gmail.com', port: 993, tls: true, authTimeout: 5000
     }
 };
@@ -52,7 +52,7 @@ async function checkInbox() {
                     const { filePath } = await generateProfessionalPDF(deal.asset_name, deal.assignment_fee, './');
 
                     await transporter.sendMail({
-                        from: '"Belgie Nunez | Hierarchy Capital" <hierarchyinvestmentcorp@gmail.com>',
+                        from: 'process.env.EMAIL_FROM_NAME <YOUR_ANONYMOUS_EMAIL>',
                         to: fromEmail,
                         subject: `PROCUREMENT PACKAGE: ${deal.asset_name}`,
                         html: `<h3>HIERARCHY</h3><p>Attached is your assignment for <b>${deal.asset_name}</b>.</p>`,

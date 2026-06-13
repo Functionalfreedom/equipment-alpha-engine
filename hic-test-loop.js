@@ -9,12 +9,12 @@ const { generateProfessionalPDF } = require('./scraper.js');
 const pool = new Pool({ user: 'belgienunez', host: 'localhost', database: 'postgres', port: 5432 });
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com', port: 465, secure: true,
-    auth: { user: 'hierarchyinvestmentcorp@gmail.com', pass: 'klljylapojryecxv' }
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
 const config = {
     imap: {
-        user: 'hierarchyinvestmentcorp@gmail.com', password: 'klljylapojryecxv',
+        user: process.env.EMAIL_USER, password: process.env.EMAIL_PASS,
         host: 'imap.gmail.com', port: 993, tls: true, authTimeout: 5000
     }
 };
@@ -46,7 +46,7 @@ async function testLoop() {
                 const { filePath } = await generateProfessionalPDF(asset, fee, './');
 
                 await transporter.sendMail({
-                    from: '"Hierarchy Capital | TEST" <hierarchyinvestmentcorp@gmail.com>',
+                    from: 'process.env.EMAIL_FROM_NAME <YOUR_ANONYMOUS_EMAIL>',
                     to: fromEmail,
                     subject: `[TEST LOOP] PROCUREMENT: ${asset}`,
                     html: `<h3>HIERARCHY INVESTMENT CAPITAL</h3><p>Loop Test Successful. Attached is the package for <b>${asset}</b>.</p>`,

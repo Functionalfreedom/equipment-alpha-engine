@@ -20,7 +20,7 @@ const client = new PlaidApi(configuration);
 async function getLinkToken() {
     try {
         const response = await client.linkTokenCreate({
-            user: { client_user_id: 'hierarchy_principal_001' },
+            user: { client_user_id: process.env.CLIENT_USER_ID },
             client_name: 'Hierarchy Investment Capital',
             products: ['transactions'],
             country_codes: ['CA'],
