@@ -2,20 +2,22 @@
 
 ## Overview
 
-Open-source Node.js automation engine for sourcing heavy equipment and machinery liquidation opportunities. It scrapes auction/liquidation listings, calculates potential spreads (FMV vs bid price), and automates outreach sequences to interested buyers.
+A Node.js-based automation engine for identifying and capitalizing on liquidation opportunities in heavy equipment and machinery. It scrapes auction sites, calculates potential arbitrage spreads (FMV vs. current bid), automates buyer outreach, tracks sales funnel progress, and handles payments.
 
-## Features
-- Web scraping for heavy machinery and aircraft listings
-- Spread / alpha opportunity calculation
-- Automated email outreach sequences
-- Dashboard for monitoring deals
-- IMAP reply tracking and funnel management
-- PDF generation and Stripe payment integration
+**Goal**: Find undervalued heavy machinery in Canada, connect with US buyers who can benefit from tax advantages and lower acquisition costs.
+
+## Key Features
+- Scraping of liquidation/auction listings (heavy equipment + aircraft)
+- FMV estimation and spread/alpha calculation
+- Automated multi-phase email outreach sequences
+- Real-time dashboard for monitoring deals and time-to-expiration
+- IMAP-based reply tracking and funnel management
+- PDF generation for terms
+- Stripe webhook integration for automated delivery
 
 ## Tech Stack
-- Node.js
-- Puppeteer + Stealth for scraping
-- Express
+- Node.js / Express
+- Puppeteer (with stealth plugin)
 - Nodemailer + IMAP
 - PostgreSQL
 - PDFKit
@@ -23,10 +25,16 @@ Open-source Node.js automation engine for sourcing heavy equipment and machinery
 
 ## Setup
 
-1. Clone the repo
+1. `git clone https://github.com/Functionalfreedom/equipment-alpha-engine.git`
 2. `npm install`
-3. Copy `.env.example` to `.env` and fill in your credentials
-4. Run `node orchestrator.js` or individual scripts
+3. Create `.env` file (see `.env.example` if available) with required credentials
+4. Run `node orchestrator.js` for scheduled jobs or individual scripts
 
-## Important
-This is a personal project archive. Use responsibly and respect website terms of service.
+## Important Notes
+- Respect website terms of service and robots.txt
+- Scraping can break when sites change
+- This is an archived personal project for educational/reference purposes
+- Requires proper legal/compliance review for production use
+
+## License
+MIT

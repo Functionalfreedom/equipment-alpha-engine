@@ -1,14 +1,15 @@
 {
-  "name": "my-first-api",
+  "name": "equipment-alpha-engine",
   "version": "1.0.0",
-  "description": "",
+  "description": "Automation engine for heavy equipment liquidation arbitrage and deal sourcing",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "orchestrator": "node orchestrator.js"
   },
-  "keywords": [],
+  "keywords": ["scraping", "automation", "deal-sourcing", "arbitrage", "heavy-equipment", "liquidation"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.13.6",
@@ -24,7 +25,6 @@
     "nodemailer": "^8.0.3",
     "pdfkit": "^0.18.0",
     "pg": "^8.20.0",
-    "plaid": "^41.4.0",
     "puppeteer": "^24.40.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
